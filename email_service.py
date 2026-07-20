@@ -1,57 +1,54 @@
 import os
 from dotenv import load_dotenv
-
-from fastapi_mail import ConnectionConfig, FastMail, MessageSchema
+import httpx
 
 load_dotenv()
 
-
-conf = ConnectionConfig(
-    MAIL_USERNAME=os.getenv("SMTP_EMAIL"),
-    MAIL_PASSWORD=os.getenv("SMTP_PASSWORD"),
-    MAIL_FROM=os.getenv("MAIL_FROM"),
-    MAIL_PORT=465,
-    MAIL_SERVER="smtp.gmail.com",
-    MAIL_SSL_TLS=True,
-    MAIL_STARTTLS=False,
-    USE_CREDENTIALS=True,
-)
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
+MAIL_FROM = os.getenv("MAIL_FROM")
 
 
 async def send_invite_email(candidate_email: str, interview_link: str):
 
-    print("Preparing email for:", candidate_email)
+    headers = {
+        "accept": "application/json",
+        "api-key": BREVO_API_KEY,
+        "content-type": "application/json"
+    }
 
-
-    message = MessageSchema(
-        subject="Video Interview Invitation",
-        recipients=[candidate_email],
-        body=f"""
+    payload = {
+        "sender": {
+            "name": "Video Bot Screening",
+            "email": MAIL_FROM
+        },
+        "to": [
+            {
+                "email": candidate_email
+            }
+        ],
+        "subject": "Video Interview Invitation",
+        "textContent": f"""
 Hello,
 
 You have been invited for a Video Bot Screening interview.
 
-Please click the link below to start your interview:
+Click the link below to start your interview:
 
 {interview_link}
 
 Best of luck!
-""",
-        subtype="plain"
-    )
+"""
+    }
 
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "https://api.brevo.com/v3/smtp/email",
+            headers=headers,
+            json=payload
+        )
 
-    try:
+    if response.status_code not in [200, 201]:
+        print(response.text)
+        raise Exception("Failed to send email via Brevo")
 
-        fm = FastMail(conf)
-
-        await fm.send_message(message)
-
-        print("EMAIL SENT SUCCESSFULLY")
-
-
-    except Exception as e:
-
-        print("EMAIL ERROR:", e)
-
-        raise e
+    print("EMAIL SENT SUCCESSFULLY")
