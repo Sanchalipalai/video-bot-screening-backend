@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-
+import os
 from database import Base, engine
 
 from routes import auth
@@ -24,12 +24,17 @@ app = FastAPI(
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://video-bot-screening-frontend-oeh75noon-video-bot-screening.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:5176"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+os.makedirs("uploads", exist_ok=True)
 
 # Static videos
 app.mount(
