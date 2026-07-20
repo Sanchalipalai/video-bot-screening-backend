@@ -10,13 +10,15 @@ MAIL_FROM = os.getenv("MAIL_FROM")
 
 async def send_invite_email(candidate_email: str, interview_link: str):
 
+    print("Sending email using Brevo")
+
     headers = {
         "accept": "application/json",
         "api-key": BREVO_API_KEY,
         "content-type": "application/json"
     }
 
-    payload = {
+    data = {
         "sender": {
             "name": "Video Bot Screening",
             "email": MAIL_FROM
@@ -32,7 +34,7 @@ Hello,
 
 You have been invited for a Video Bot Screening interview.
 
-Click the link below to start your interview:
+Start your interview here:
 
 {interview_link}
 
@@ -44,11 +46,12 @@ Best of luck!
         response = await client.post(
             "https://api.brevo.com/v3/smtp/email",
             headers=headers,
-            json=payload
+            json=data
         )
 
+    print("Brevo response:", response.status_code, response.text)
+
     if response.status_code not in [200, 201]:
-        print(response.text)
-        raise Exception("Failed to send email via Brevo")
+        raise Exception(response.text)
 
     print("EMAIL SENT SUCCESSFULLY")
