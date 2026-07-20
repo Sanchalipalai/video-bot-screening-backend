@@ -9,11 +9,11 @@ load_dotenv()
 conf = ConnectionConfig(
     MAIL_USERNAME=os.getenv("SMTP_EMAIL"),
     MAIL_PASSWORD=os.getenv("SMTP_PASSWORD"),
-    MAIL_FROM=os.getenv("SMTP_EMAIL"),
-    MAIL_PORT=587,
+    MAIL_FROM=os.getenv("MAIL_FROM"),
+    MAIL_PORT=465,
     MAIL_SERVER="smtp.gmail.com",
-    MAIL_STARTTLS=True,
-    MAIL_SSL_TLS=False,
+    MAIL_SSL_TLS=True,
+    MAIL_STARTTLS=False,
     USE_CREDENTIALS=True,
 )
 
