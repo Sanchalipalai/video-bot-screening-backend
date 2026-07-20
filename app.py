@@ -25,11 +25,11 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://video-bot-screening-frontend-oeh75noon-video-bot-screening.vercel.app",
-        "http://localhost:5173",
-        "http://localhost:5176"
-    ],
-    allow_credentials=True,
+    "https://video-bot-screening-frontend-nhy7rql1m-video-bot-screening.vercel.app",
+    "https://video-bot-screening-frontend-oeh75noon-video-bot-screening.vercel.app",
+    "http://localhost:5173",
+    "http://localhost:5176"
+],    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
