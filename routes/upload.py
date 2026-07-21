@@ -1,11 +1,11 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends
+from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from supabase_client import supabase
 from transcribe import transcribe_video
 from ai_service import analyze_transcript
 from database import get_db
-from models import InterviewAnswer
+from models import Candidate, InterviewAnswer
 
 import uuid
 import os
@@ -21,11 +21,14 @@ async def upload_interview(
     video: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    
-    # Find candidate using the interview token
+
+    print("TOKEN RECEIVED:", token)
+
+    # Find candidate using interview token
     candidate = db.query(Candidate).filter(
         Candidate.interview_token == token
     ).first()
+
 
     if not candidate:
         raise HTTPException(
@@ -33,45 +36,48 @@ async def upload_interview(
             detail="Candidate not found"
         )
 
+
     candidate_id = candidate.id
 
+
     if video is None:
-        return {
-            "error": "No video received"
-        }
+        raise HTTPException(
+            status_code=400,
+            detail="No video received"
+        )
 
-    file_name = f"{candidate_id}_{uuid.uuid4()}.webm"
-
-    video_data = await video.read()
-
-    supabase.storage.from_(
-        "interview-videos"
-    ).upload(
-        file_name,
-        video_data,
-        {
-            "content-type": "video/webm"
-        }
-    )
 
     try:
-
-        
 
         print("RECEIVED VIDEO:", video.filename)
         print("QUESTION:", question)
 
 
-        # Read video
+        # Read video once
         video_data = await video.read()
 
-        print("VIDEO SIZE:", len(video_data))
+
+        print(
+            "VIDEO SIZE:",
+            len(video_data)
+        )
 
 
-        # Save temporary video for transcription
-        os.makedirs("temp", exist_ok=True)
+        if len(video_data) == 0:
+            raise Exception("Empty video file")
 
-        temp_file = f"temp/{uuid.uuid4()}.mp4"
+
+        # -------------------------
+        # Save temporary video
+        # -------------------------
+
+        os.makedirs(
+            "temp",
+            exist_ok=True
+        )
+
+
+        temp_file = f"temp/{uuid.uuid4()}.webm"
 
 
         with open(temp_file, "wb") as f:
@@ -79,10 +85,16 @@ async def upload_interview(
 
 
 
+        # -------------------------
         # Generate transcript
+        # -------------------------
+
         try:
 
-            transcript = transcribe_video(temp_file)
+            transcript = transcribe_video(
+                temp_file
+            )
+
 
             print(
                 "TRANSCRIPT:",
@@ -101,7 +113,10 @@ async def upload_interview(
 
 
 
-        # Grok AI Evaluation
+        # -------------------------
+        # AI Evaluation
+        # -------------------------
+
         try:
 
             ai_result = analyze_transcript(
@@ -123,17 +138,17 @@ async def upload_interview(
                 e
             )
 
+
             ai_result = {
-
                 "overall_score": 0,
-
                 "feedback": "AI evaluation failed"
-
             }
 
 
 
+        # -------------------------
         # Upload video to Supabase
+        # -------------------------
 
         file_name = (
             f"{candidate_id}_{uuid.uuid4()}.webm"
@@ -165,7 +180,9 @@ async def upload_interview(
 
 
 
-        # Save everything to database
+        # -------------------------
+        # Save answer in database
+        # -------------------------
 
         answer = InterviewAnswer(
 
@@ -204,7 +221,7 @@ async def upload_interview(
 
 
 
-        # Delete temporary file
+        # Remove temp file
 
         if os.path.exists(temp_file):
 
@@ -238,17 +255,13 @@ async def upload_interview(
 
     except Exception as e:
 
-
         print(
             "UPLOAD ERROR:",
             e
         )
 
 
-        return {
-
-            "message": "Upload failed",
-
-            "error": str(e)
-
-        }
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )
