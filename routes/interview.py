@@ -121,9 +121,9 @@ def get_screening(
 
 
 # Upload video to Supabase
-@router.post("/upload-interview/{candidate_id}")
+@router.post("/upload-interview/{token}")
 async def upload_interview(
-    candidate_id: int,
+    token: str,
     question: str = Form(None),
     video: UploadFile = File(None),
     db: Session = Depends(get_db)

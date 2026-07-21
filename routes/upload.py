@@ -14,15 +14,49 @@ import os
 router = APIRouter()
 
 
-@router.post("/upload-interview/{candidate_id}")
+@router.post("/upload-interview/{token}")
 async def upload_interview(
-    candidate_id: int,
-    question: str = Form("Unknown"),
-    video: UploadFile = File(...),
+    token: str,
+    question: str = Form(None),
+    video: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
+    
+    # Find candidate using the interview token
+    candidate = db.query(Candidate).filter(
+        Candidate.interview_token == token
+    ).first()
+
+    if not candidate:
+        raise HTTPException(
+            status_code=404,
+            detail="Candidate not found"
+        )
+
+    candidate_id = candidate.id
+
+    if video is None:
+        return {
+            "error": "No video received"
+        }
+
+    file_name = f"{candidate_id}_{uuid.uuid4()}.webm"
+
+    video_data = await video.read()
+
+    supabase.storage.from_(
+        "interview-videos"
+    ).upload(
+        file_name,
+        video_data,
+        {
+            "content-type": "video/webm"
+        }
+    )
 
     try:
+
+        
 
         print("RECEIVED VIDEO:", video.filename)
         print("QUESTION:", question)
