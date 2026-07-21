@@ -1,37 +1,18 @@
-import whisper
+import os
+from openai import OpenAI
 
-
-print("Loading Whisper model...")
-
-model = whisper.load_model("base")
-
-print("Whisper model loaded")
+client = OpenAI(
+    api_key=os.getenv("OPENAI_API_KEY")
+)
 
 
 def transcribe_video(video_path):
 
-    print("Transcribing:", video_path)
+    with open(video_path, "rb") as audio_file:
 
-    result = model.transcribe(
-        video_path
-    )
+        transcript = client.audio.transcriptions.create(
+            model="gpt-4o-mini-transcribe",
+            file=audio_file
+        )
 
-    transcript = result["text"]
-
-    print(
-        "Transcript:",
-        transcript
-    )
-
-    return transcript
-
-import subprocess
-
-try:
-    output = subprocess.check_output(
-        ["which", "ffmpeg"]
-    )
-    print("FFMPEG LOCATION:", output)
-
-except Exception as e:
-    print("FFMPEG NOT FOUND:", e)
+    return transcript.text
