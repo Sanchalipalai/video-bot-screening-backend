@@ -1,5 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float
 from database import Base
+import uuid
 
 
 class Candidate(Base):
@@ -30,6 +31,13 @@ class Candidate(Base):
     status = Column(
         String,
         default="Review"
+    )
+
+    # unique interview link token
+    interview_token = Column(
+        String,
+        unique=True,
+        default=lambda: str(uuid.uuid4())
     )
 
 

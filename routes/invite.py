@@ -27,7 +27,7 @@ async def invite(
     db.refresh(candidate)
 
     frontend_url = os.getenv("FRONTEND_URL")
-    link = f"{frontend_url}/interview/{candidate.id}"
+    link = f"{frontend_url}/interview/{candidate.interview_token}"
 
     await send_invite_email(email, link)
 
