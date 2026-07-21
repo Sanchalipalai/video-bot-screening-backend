@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 import os
+from models import Candidate, InterviewAnswer
 from dotenv import load_dotenv
 from database import get_db
 from models import Candidate
@@ -52,7 +53,14 @@ def delete_candidate(
             detail="Candidate not found"
         )
 
+    # delete interview answers first
+    db.query(InterviewAnswer).filter(
+        InterviewAnswer.candidate_id == candidate_id
+    ).delete()
+
+    # delete candidate
     db.delete(candidate)
+
     db.commit()
 
     return {
