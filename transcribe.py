@@ -24,3 +24,14 @@ def transcribe_video(video_path):
     )
 
     return transcript
+
+import subprocess
+
+try:
+    output = subprocess.check_output(
+        ["which", "ffmpeg"]
+    )
+    print("FFMPEG LOCATION:", output)
+
+except Exception as e:
+    print("FFMPEG NOT FOUND:", e)
