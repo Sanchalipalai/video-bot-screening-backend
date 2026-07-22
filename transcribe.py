@@ -1,4 +1,5 @@
 import os
+import requests
 from openai import OpenAI
 
 client = OpenAI(
@@ -7,6 +8,17 @@ client = OpenAI(
 
 
 def transcribe_video(video_path):
+
+    # Test whether Railway can reach OpenAI
+    try:
+        r = requests.get(
+            "https://api.openai.com/v1/models",
+            timeout=10
+        )
+        print("OPENAI STATUS:", r.status_code)
+
+    except Exception as e:
+        print("OPENAI REQUEST FAILED:", repr(e))
 
     print("OPENAI KEY EXISTS:", bool(os.getenv("OPENAI_API_KEY")))
 
