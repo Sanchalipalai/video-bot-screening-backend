@@ -1,49 +1,37 @@
-import os
-import requests
-from openai import OpenAI
+import whisper
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+print("Loading Whisper model...")
+
+model = whisper.load_model("base")
+
+print("Whisper model loaded")
 
 
 def transcribe_video(video_path):
 
-    # Test whether Railway can reach OpenAI
+    print("Transcribing:", video_path)
+
     try:
-        r = requests.get(
-            "https://api.openai.com/v1/models",
-            timeout=10
+
+        result = model.transcribe(
+            video_path
         )
-        print("OPENAI STATUS:", r.status_code)
 
-    except Exception as e:
-        print("OPENAI REQUEST FAILED:", repr(e))
+        transcript = result["text"]
 
-    print("OPENAI KEY EXISTS:", bool(os.getenv("OPENAI_API_KEY")))
+        print(
+            "TRANSCRIPT:",
+            transcript
+        )
 
-    try:
+        return transcript
 
-        with open(video_path, "rb") as audio_file:
-
-            result = client.audio.transcriptions.create(
-                model="gpt-4o-mini-transcribe",
-                file=audio_file
-            )
-
-        print("TRANSCRIPT RESULT:", result.text)
-
-        return result.text
 
     except Exception as e:
 
-        print("OPENAI ERROR TYPE:", type(e).__name__)
-        print("OPENAI ERROR:", repr(e))
-
-        if hasattr(e, "__cause__") and e.__cause__:
-            print("CAUSE:", repr(e.__cause__))
-
-        if hasattr(e, "__context__") and e.__context__:
-            print("CONTEXT:", repr(e.__context__))
+        print(
+            "WHISPER ERROR:",
+            repr(e)
+        )
 
         raise
