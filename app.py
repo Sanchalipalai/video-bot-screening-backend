@@ -23,13 +23,14 @@ app = FastAPI(
 
 # CORS
 from fastapi.middleware.cors import CORSMiddleware
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://video-bot-screening-frontend-7zc7fuu91-video-bot-screening.vercel.app",
         "http://localhost:5173",
         "http://localhost:5176"
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
