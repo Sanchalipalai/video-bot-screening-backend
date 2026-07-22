@@ -2,7 +2,7 @@ import whisper
 
 print("Loading Whisper model...")
 
-model = whisper.load_model("base")
+model = whisper.load_model("tiny")
 
 print("Whisper model loaded")
 
@@ -14,7 +14,8 @@ def transcribe_video(video_path):
     try:
 
         result = model.transcribe(
-            video_path
+            video_path,
+            fp16=False
         )
 
         transcript = result["text"]
