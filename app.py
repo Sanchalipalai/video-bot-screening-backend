@@ -23,12 +23,10 @@ app = FastAPI(
 
 # CORS
 from fastapi.middleware.cors import CORSMiddleware
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "https://video-bot-screening-frontend-7zc7fuu91-video-bot-screening.vercel.app",
-        "https://video-bot-screening-frontend.vercel.app",
         "http://localhost:5173",
         "http://localhost:5176"
     ],
@@ -36,7 +34,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 os.makedirs("uploads", exist_ok=True)
 
 # Static videos
