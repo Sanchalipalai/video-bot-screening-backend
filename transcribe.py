@@ -1,7 +1,6 @@
 import os
 from openai import OpenAI
 
-
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
@@ -9,11 +8,7 @@ client = OpenAI(
 
 def transcribe_video(video_path):
 
-    print(
-        "OPENAI KEY EXISTS:",
-        bool(os.getenv("OPENAI_API_KEY"))
-    )
-
+    print("OPENAI KEY EXISTS:", bool(os.getenv("OPENAI_API_KEY")))
 
     try:
 
@@ -24,26 +19,19 @@ def transcribe_video(video_path):
                 file=audio_file
             )
 
-
-        print(
-            "TRANSCRIPT RESULT:",
-            result.text
-        )
-
+        print("TRANSCRIPT RESULT:", result.text)
 
         return result.text
 
-
     except Exception as e:
 
-        print(
-            "OPENAI ERROR TYPE:",
-            type(e).__name__
-        )
+        print("OPENAI ERROR TYPE:", type(e).__name__)
+        print("OPENAI ERROR:", repr(e))
 
-        print(
-            "OPENAI ERROR:",
-            repr(e)
-        )
+        if hasattr(e, "__cause__") and e.__cause__:
+            print("CAUSE:", repr(e.__cause__))
 
-        raise e
+        if hasattr(e, "__context__") and e.__context__:
+            print("CONTEXT:", repr(e.__context__))
+
+        raise
