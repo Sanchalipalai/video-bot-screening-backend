@@ -1,5 +1,6 @@
+videobot.db
+*.db
 venv/
 __pycache__/
 .env
 temp/
-*.pyc
