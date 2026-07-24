@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from supabase_client import supabase
 from transcribe import transcribe_video
-from ai_service import analyze_transcript
+from ai_evaluator import evaluate_candidate
 from database import get_db
 from models import Candidate, InterviewAnswer
 
@@ -85,7 +85,7 @@ async def upload_interview(
 
 
 
-        # -------------------------
+                # -------------------------
         # Generate transcript
         # -------------------------
 
@@ -111,17 +111,15 @@ async def upload_interview(
 
             transcript = "No transcript generated"
 
-
-
         # -------------------------
-        # AI Evaluation
+        # Rule Based Evaluation
         # -------------------------
 
         try:
 
-            ai_result = analyze_transcript(
-                question,
-                transcript
+            ai_result = evaluate_candidate(
+                transcript,
+                question
             )
 
 
@@ -134,16 +132,15 @@ async def upload_interview(
         except Exception as e:
 
             print(
-                "AI ANALYSIS ERROR:",
+                "EVALUATION ERROR:",
                 e
             )
 
 
             ai_result = {
                 "overall_score": 0,
-                "feedback": "AI evaluation failed"
+                "feedback": "Evaluation failed"
             }
-
 
 
         # -------------------------
