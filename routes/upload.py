@@ -1,7 +1,7 @@
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 
-from supabase_client import supabase
 from transcribe import transcribe_video
 from ai_evaluator import evaluate_candidate
 from database import get_db
@@ -9,28 +9,37 @@ from models import Candidate, InterviewAnswer
 
 import uuid
 import os
+import requests
 
 
 router = APIRouter()
 
 
+class InterviewUpload(BaseModel):
+    video_url: str
+    question: str
+
+
+
 @router.post("/upload-interview/{token}")
 async def upload_interview(
     token: str,
-    question: str = Form(None),
-    video: UploadFile = File(None),
+    data: InterviewUpload,
     db: Session = Depends(get_db)
 ):
 
     print("TOKEN RECEIVED:", token)
 
-    # Find candidate using interview token
+
+    # Find candidate
+
     candidate = db.query(Candidate).filter(
         Candidate.interview_token == token
     ).first()
 
 
     if not candidate:
+
         raise HTTPException(
             status_code=404,
             detail="Candidate not found"
@@ -40,21 +49,32 @@ async def upload_interview(
     candidate_id = candidate.id
 
 
-    if video is None:
-        raise HTTPException(
-            status_code=400,
-            detail="No video received"
-        )
+    video_url = data.video_url
+    question = data.question
+
+
+    print("VIDEO URL RECEIVED:", video_url)
+    print("QUESTION:", question)
+
 
 
     try:
 
-        print("RECEIVED VIDEO:", video.filename)
-        print("QUESTION:", question)
+        # -------------------------
+        # Download video temporarily
+        # -------------------------
+
+        video_response = requests.get(video_url)
 
 
-        # Read video once
-        video_data = await video.read()
+        if video_response.status_code != 200:
+
+            raise Exception(
+                "Could not download video"
+            )
+
+
+        video_data = video_response.content
 
 
         print(
@@ -62,14 +82,6 @@ async def upload_interview(
             len(video_data)
         )
 
-
-        if len(video_data) == 0:
-            raise Exception("Empty video file")
-
-
-        # -------------------------
-        # Save temporary video
-        # -------------------------
 
         os.makedirs(
             "temp",
@@ -81,12 +93,13 @@ async def upload_interview(
 
 
         with open(temp_file, "wb") as f:
+
             f.write(video_data)
 
 
 
-                # -------------------------
-        # Generate transcript
+        # -------------------------
+        # Transcription
         # -------------------------
 
         try:
@@ -109,7 +122,10 @@ async def upload_interview(
                 e
             )
 
+
             transcript = "No transcript generated"
+
+
 
         # -------------------------
         # Rule Based Evaluation
@@ -138,47 +154,17 @@ async def upload_interview(
 
 
             ai_result = {
+
                 "overall_score": 0,
+
                 "feedback": "Evaluation failed"
+
             }
 
 
-        # -------------------------
-        # Upload video to Supabase
-        # -------------------------
-
-        file_name = (
-            f"{candidate_id}_{uuid.uuid4()}.webm"
-        )
-
-
-        supabase.storage.from_(
-            "interview-videos"
-        ).upload(
-            file_name,
-            video_data,
-            {
-                "content-type": "video/webm"
-            }
-        )
-
-
-        video_url = supabase.storage.from_(
-            "interview-videos"
-        ).get_public_url(
-            file_name
-        )
-
-
-        print(
-            "VIDEO URL:",
-            video_url
-        )
-
-
 
         # -------------------------
-        # Save answer in database
+        # Save Answer
         # -------------------------
 
         answer = InterviewAnswer(
@@ -209,6 +195,7 @@ async def upload_interview(
         db.commit()
 
         db.refresh(answer)
+
 
 
         print(
@@ -252,6 +239,7 @@ async def upload_interview(
 
     except Exception as e:
 
+
         print(
             "UPLOAD ERROR:",
             e
@@ -259,6 +247,9 @@ async def upload_interview(
 
 
         raise HTTPException(
+
             status_code=500,
+
             detail=str(e)
+
         )
