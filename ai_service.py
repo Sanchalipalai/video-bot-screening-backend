@@ -3,6 +3,9 @@ import json
 from openai import OpenAI
 
 
+print("XAI KEY EXISTS:", bool(os.getenv("XAI_API_KEY")))
+
+
 client = OpenAI(
     api_key=os.getenv("XAI_API_KEY"),
     base_url="https://api.x.ai/v1"
@@ -54,6 +57,12 @@ Candidate Answer:
         result_text = response.choices[0].message.content
 
         print("GROK RAW RESULT:", result_text)
+
+
+        # Remove markdown formatting if Grok adds it
+        result_text = result_text.replace("```json", "")
+        result_text = result_text.replace("```", "")
+        result_text = result_text.strip()
 
 
         result = json.loads(result_text)
